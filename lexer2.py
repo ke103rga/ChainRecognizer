@@ -31,7 +31,7 @@ fsm = {"start": {"letter": "key-word_repeat", "space": "start"},
        "second_summand2": {"letter": "second_summand2", "digit": "second_summand2", "sqrbrkt2": "space6"},
        "space6": {"space": "space6", "compar_sign": "space7"},
        "space7": {"space": "space7", "letter": "ident"},
-       "ident": {"letter": "ident", "digit": "ident", "space": "space8"},
+       "ident": {"letter": "ident", "digit": "ident", "space": "space8", "smcolon": "space9"},
        "space8": {"space": "space8", "smcolon": "space9"},
        "space9": {"space": "space9"}}
 
@@ -39,10 +39,20 @@ initial_state = "start"
 
 admitting_states = ["space9"]
 
-LEXER_LEXEM: namedtuple = namedtuple('Lexem', ['symbol', 'cls'])
+searching_ident_states = ["space1", "space3", "space8"]
+
+searching_symbol_states = ["space5", "space7", "space9"]
+
+searching_int_states = ["first_space2"]
+
+searching_ident_and_sym_states = ["funcparam_sing", "first_summand_ident1", "space4", "first_summand_ident2", "space6"]
+
+searching_ident_and_ar_sing_states = ["index_space2", "index_space4"]
+
+LEXER_LEXEM: namedtuple = namedtuple('Lexem', ['word', 'cls'])
 
 
-def lexical(symbols: List[namedtuple]) -> List[namedtuple]:
+def garanted_lexical(symbols: List[namedtuple]) -> List[namedtuple]:
     words = []
     state = initial_state
     word = ""
@@ -54,7 +64,7 @@ def lexical(symbols: List[namedtuple]) -> List[namedtuple]:
             if transition.get(symbol.cls) == "space1" and word != "":
                 words.append(LEXER_LEXEM(word, "ident"))
                 word = ""
-            elif transition.get(symbol.cls) == "funcparam_sign" and word != "":
+            elif transition.get(symbol.cls) == "funcparam_sing" and word != "":
                 words.append(LEXER_LEXEM(word[:-1], "ident"))
                 words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
                 print(symbol.symbol)
@@ -96,11 +106,11 @@ def lexical(symbols: List[namedtuple]) -> List[namedtuple]:
             elif transition.get(symbol.cls) == "space7" and word != "":
                 words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
                 word = ""
-            elif transition.get(symbol.cls) == "space8":
+            elif transition.get(symbol.cls) == "space8" and word != "":
                 words.append(LEXER_LEXEM(word, "ident"))
                 word = ""
-            elif transition.get(symbol.cls) == "space9":
-                words.append(LEXER_LEXEM(word, symbol.cls))
+            elif transition.get(symbol.cls) == "space9" and len(word) != 0:
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
                 word = ""
             state = transition.get(symbol.cls)
 
@@ -110,9 +120,46 @@ def lexical(symbols: List[namedtuple]) -> List[namedtuple]:
     return words
 
 
-symbols = Transliterator.transliteration("repeat f(1) until A[i+j]modB[i+j]<>Max;")
+def lexical(symbols: List[namedtuple], initial_state: str = initial_state) -> List[namedtuple]:
+    words = []
+    state = initial_state
+    word = ""
+    for symbol in symbols:
+        transition = fsm.get(state)
+        next_state = transition.get(symbol.cls)
+        if symbol.cls in transition.keys():
+            if symbol.cls != "space":
+                word += symbol.symbol
+            if next_state in searching_ident_states and word != "":
+                words.append(LEXER_LEXEM(word, "ident"))
+                word = ""
+            elif next_state in searching_symbol_states and word != "":
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state in searching_ident_and_sym_states and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state in searching_ident_and_ar_sing_states and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, "arithmet_sign"))
+                word = ""
+            elif next_state in searching_int_states and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "int"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            state = next_state
+        else:
+            print("Хуйня, не работает")
+            break
+    return words
+
+
+symbols = Transliterator.transliteration("repeat       f5(-11) until    A[i1+j3f]modB[i+ j]<>  bMax   ;")
 for symbol in symbols:
     print(f"{symbol.symbol}: {symbol.cls}")
+garanted_words = garanted_lexical(symbols)
 words = lexical(symbols)
 for symbol in words:
-    print(f"{symbol.symbol}: {symbol.cls}")
+    print(f"{symbol.word}: {symbol.cls}")
+print(garanted_words == words)
