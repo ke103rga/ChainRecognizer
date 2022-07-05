@@ -1,6 +1,7 @@
 from typing import List
 from collections import namedtuple
 from transliterator import Transliterator
+from keywords import PASCAL_KEYWORDS
 
 fsm = {"start": {"letter": "key-word_repeat", "space": "start"},
        "key-word_repeat": {"letter": "key-word_repeat", "space": "space1"},
@@ -155,7 +156,19 @@ def lexical(symbols: List[namedtuple], initial_state: str = initial_state) -> Li
     return words
 
 
-symbols = Transliterator.transliteration("repeat       f5(-11) until    A[i1+j3f]modB[i+ j]<>  bMax   ;")
+def check_keywords(words: List[namedtuple]) -> List[namedtuple]:
+    for index, word in enumerate(words):
+        if word.cls == "ident":
+            if word.word in PASCAL_KEYWORDS:
+                words[index] = LEXER_LEXEM(word.word, change_cls(word.word))
+    return words
+
+
+def change_cls(word: str) -> str:
+    return f"keyword_{word}"
+
+
+symbols = Transliterator.transliteration("   repeat       f5(-11) until    A[i1+j3f]modB[i+ j]<>  bMax   ;")
 for symbol in symbols:
     print(f"{symbol.symbol}: {symbol.cls}")
 garanted_words = garanted_lexical(symbols)
@@ -163,3 +176,6 @@ words = lexical(symbols)
 for symbol in words:
     print(f"{symbol.word}: {symbol.cls}")
 print(garanted_words == words)
+words = check_keywords(words)
+for symbol in words:
+    print(f"{symbol.word}: {symbol.cls}")
