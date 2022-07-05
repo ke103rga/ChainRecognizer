@@ -1,7 +1,7 @@
-from file_manager import FileManager
-from transliterator import Transliterator
-from lexer import Lexer
-from syntax import syntax
+from file_manager import data_input, data_output
+from transliterator import transliteration
+from lexer2 import lexical, check_keywords
+from syntax2 import syntax
 
 
 if __name__ == '__main__':

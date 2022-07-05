@@ -1,7 +1,9 @@
 from typing import List
 from collections import namedtuple
-from transliterator import Transliterator
 from keywords import PASCAL_KEYWORDS
+from transliterator import transliteration, input
+from syntax2 import syntax
+
 
 fsm = {"start": {"letter": "key-word_repeat", "space": "start"},
        "key-word_repeat": {"letter": "key-word_repeat", "space": "space1"},
@@ -17,7 +19,7 @@ fsm = {"start": {"letter": "key-word_repeat", "space": "start"},
        "arr1": {"letter": "arr1", "digit": "arr1", "sqrbrkt1": "first_summand_ident1"},
        "first_summand_ident1": {"letter": "first_summand1", "space": "first_summand_ident1"},
        "first_summand1": {"letter": "first_summand1", "digit": "first_summand1",
-                          "space": "in-dex_space1", "arithmet_sign": "index_space2", "dig_sign": "index_space2"},
+                          "space": "index_space1", "arithmet_sign": "index_space2", "dig_sign": "index_space2"},
        "index_space1": {"space": "index_space1", "arithmet_sign": "index_space2", "dig_sign": "index_space2"},
        "index_space2": {"space": "index_space2", "letter": "second_summand1"},
        "second_summand1": {"letter": "second_summand1", "digit": "second_summand1", "sqrbrkt2": "space4"},
@@ -27,7 +29,7 @@ fsm = {"start": {"letter": "key-word_repeat", "space": "start"},
        "first_summand_ident2": {"space": "first_summand_ident2", "letter": "first_summand2"},
        "first_summand2": {"letter": "first_summand2", "digit": "first_summand2",
                           "space": "index_space3", "arithmet_sign": "index_space4", "dig_sign": "index_space4"},
-       "idex_space3": {"space": "idex_space3", "arithmet_sign": "index_space4", "dig_sign": "index_space4"},
+       "index_space3": {"space": "idex_space3", "arithmet_sign": "index_space4", "dig_sign": "index_space4"},
        "index_space4": {"space": "index_space4", "letter": "second_summand2"},
        "second_summand2": {"letter": "second_summand2", "digit": "second_summand2", "sqrbrkt2": "space6"},
        "space6": {"space": "space6", "compar_sign": "space7"},
@@ -42,11 +44,11 @@ admitting_states = ["space9"]
 
 searching_ident_states = ["space1", "space3", "space8"]
 
-searching_symbol_states = ["space5", "space7", "space9"]
+searching_symbol_states = ["space7"]
 
 searching_int_states = ["first_space2"]
 
-searching_ident_and_sym_states = ["funcparam_sing", "first_summand_ident1", "space4", "first_summand_ident2", "space6"]
+searching_ident_and_sym_states = ["funcparam_sing", "first_summand_ident1", "space4", "first_summand_ident2", "space6", "space9"]
 
 searching_ident_and_ar_sing_states = ["index_space2", "index_space4"]
 
@@ -127,14 +129,18 @@ def lexical(symbols: List[namedtuple], initial_state: str = initial_state) -> Li
     word = ""
     for symbol in symbols:
         transition = fsm.get(state)
-        next_state = transition.get(symbol.cls)
+
         if symbol.cls in transition.keys():
+            next_state = transition.get(symbol.cls)
             if symbol.cls != "space":
                 word += symbol.symbol
             if next_state in searching_ident_states and word != "":
                 words.append(LEXER_LEXEM(word, "ident"))
                 word = ""
             elif next_state in searching_symbol_states and word != "":
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state == "space9" and len(word) == 1:
                 words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
                 word = ""
             elif next_state in searching_ident_and_sym_states and word != "":
@@ -148,6 +154,9 @@ def lexical(symbols: List[namedtuple], initial_state: str = initial_state) -> Li
             elif next_state in searching_int_states and word != "":
                 words.append(LEXER_LEXEM(word[:-1], "int"))
                 words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state == "space5" and word != "":
+                words.append(LEXER_LEXEM(symbol.symbol, "arithmet_sign"))
                 word = ""
             state = next_state
         else:
@@ -165,17 +174,17 @@ def check_keywords(words: List[namedtuple]) -> List[namedtuple]:
 
 
 def change_cls(word: str) -> str:
-    return f"keyword_{word}"
+    return f"key_{word}"
 
 
-symbols = Transliterator.transliteration("   repeat       f5(-11) until    A[i1+j3f]modB[i+ j]<>  bMax   ;")
-for symbol in symbols:
-    print(f"{symbol.symbol}: {symbol.cls}")
-garanted_words = garanted_lexical(symbols)
-words = lexical(symbols)
-for symbol in words:
-    print(f"{symbol.word}: {symbol.cls}")
-print(garanted_words == words)
-words = check_keywords(words)
-for symbol in words:
-    print(f"{symbol.word}: {symbol.cls}")
+symbols = [transliteration(input[i]) for i in range(len(input))]
+
+words = [(lexical(symbols[i], "start")) for i in range(len(symbols))]
+
+checked_words = [(check_keywords(words[i])) for i in range(len(words))]
+
+results = [print(syntax(checked_words[i])) for i in range(len(checked_words))]
+
+
+
+

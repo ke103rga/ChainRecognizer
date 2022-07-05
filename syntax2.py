@@ -7,7 +7,7 @@ fsm = {"start": {"key_repeat": "keyword_repeat"},
        "func": {"brkt1": "funcparam"},
        "funcparam": {"int": "endparam"},
        "endparam": {"brkt2": "keyword_untill"},
-       "keyword_untill": {"key_untill": "arr"},
+       "keyword_untill": {"key_until": "arr"},
        "arr": {"ident": "arr_start_param"},
        "arr_start_param": {"sqrbrkt1": "arr_first_summand"},
        "arr_first_summand": {"ident": "arr_sign"},
@@ -22,12 +22,12 @@ fsm = {"start": {"key_repeat": "keyword_repeat"},
        "arr_second_summand2": {"ident": "arr_param_end2"},
        "arr_param_end2": {"sqrbrkt2": "comp_sign"},
        "comp_sign": {"compar_sign": "identifier"},
-       "identifier": {"smcolon": "semicolon"},
-       "semicolon": {}}
+       "identifier": {"ident": "semicolon"},
+       "semicolon": {"smcolon": "accept"}}
 
 initial_state = "start"
 
-admitting_states = ["semicolon"]
+admitting_states = ["accept"]
 
 
 def syntax(words: List[namedtuple], initial_state: str = initial_state) -> bool:
@@ -37,7 +37,11 @@ def syntax(words: List[namedtuple], initial_state: str = initial_state) -> bool:
         if word.cls in transitions.keys():
             state = transitions.get(word.cls)
         else:
+            print(state)
             print("REJECTED")
             return False
-    print("ACCEPTED")
-    return True
+    print(state)
+    if state in admitting_states:
+        print(state)
+        print("ACCEPTED")
+        return True
