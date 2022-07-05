@@ -37,11 +37,6 @@ def syntax(words: List[namedtuple], initial_state: str = initial_state) -> bool:
         if word.cls in transitions.keys():
             state = transitions.get(word.cls)
         else:
-            print(state)
-            print("REJECTED")
             return False
-    print(state)
     if state in admitting_states:
-        print(state)
-        print("ACCEPTED")
         return True

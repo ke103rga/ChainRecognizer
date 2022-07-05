@@ -54,9 +54,6 @@ def transliteration(data: str) -> List[namedtuple]:
     return symbols
 
 
-input = ["repeat f(1) until A[i+j]+B[i+j]>Max;",
-         "repeat func(12) until Arr[Min+Max] div Arr[Top+Bot]<Zero;",
-         "repeat func(-12) until Arr[Min+Max] div Arr[Top+Bot]<>Zero;",
-         "repeat abs(-5) until myarray[I + j] * myarray[I - j] < MIN ;"]
+
 
 

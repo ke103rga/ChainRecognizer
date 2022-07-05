@@ -1,10 +1,26 @@
-from file_manager import data_input, data_output
+from input_output import data_input, data_output
 from transliterator import transliteration
 from lexer2 import lexical, check_keywords
 from syntax2 import syntax
 
 
-if __name__ == '__main__':
+def main():
+    s = data_input("input.txt")
+
+    symbols = transliteration(s)
+
+    words = lexical(symbols)
+
+    if words:
+        checked_words = check_keywords(words)
+        result = syntax(checked_words)
+    else:
+        result = False
+
+    data_output(result, "output.txt")
+
+
+def main_with_logs():
 
     input_chain = FileManager.data_input()
 
@@ -30,3 +46,7 @@ if __name__ == '__main__':
         file.write("\n")
 
     FileManager.return_output(chain_detected=chain_detected)
+
+
+if __name__ == "__main__":
+    main()

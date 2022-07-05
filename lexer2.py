@@ -1,8 +1,6 @@
 from typing import List
 from collections import namedtuple
 from keywords import PASCAL_KEYWORDS
-from transliterator import transliteration, input
-from syntax2 import syntax
 
 
 fsm = {"start": {"letter": "key-word_repeat", "space": "start"},
@@ -160,8 +158,7 @@ def lexical(symbols: List[namedtuple], initial_state: str = initial_state) -> Li
                 word = ""
             state = next_state
         else:
-            print("Хуйня, не работает")
-            break
+            return []
     return words
 
 
@@ -177,13 +174,7 @@ def change_cls(word: str) -> str:
     return f"key_{word}"
 
 
-symbols = [transliteration(input[i]) for i in range(len(input))]
 
-words = [(lexical(symbols[i], "start")) for i in range(len(symbols))]
-
-checked_words = [(check_keywords(words[i])) for i in range(len(words))]
-
-results = [print(syntax(checked_words[i])) for i in range(len(checked_words))]
 
 
 
