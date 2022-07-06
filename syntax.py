@@ -2,80 +2,41 @@ from typing import List
 from collections import namedtuple
 
 
-def syntax(words):
-    state = "start"
-    for s in words:
-        if s.cls == "identifier":
-            if state == "start":
-                state = "name"
-            else:
-                return 0
-        elif s.cls == "col":
-            if state == "name":
-                state = "equal"
-            else:
-                return 0
-        elif s.cls == "equal sign":
-            if state == "equal":
-                state = "array"
-            else:
-                return 0
-        elif s.cls == "identifier2":
-            if state == "array":
-                state = "arrayparam"
-            else:
-                return 0
-        elif s.cls == "sqrbrkt1":  # ----------------------
-            if state == "arrayparam":
-                state = "arrayparam"
-            elif state == "funcarr":
-                state = "funcarrparam"
-            else:
-                return 0
-        elif s.cls == "letter" or s.cls == "digit":
-            if state == "arrayparam":
-                state = "arrayparam"
-            elif state == "funcarrparam":
-                state = "funcarrparam"
-            else:
-                return 0
-        elif s.cls == "sqrbrkt2":  # -------------------------
-            if state == "arrayparam":
-                state = "sign"
-            elif state == "funcarrparam":
-                state = "semicolon"
-            else:
-                return 0
-        elif s.cls == "arithmetic sign":
-            if state == "sign":
-                state = "func"
-            else:
-                return 0
-        elif s.cls == "identifier3":
-            if state == "func":
-                state = "funcarr"
-            else:
-                return 0
-        elif s.cls == "brkt1":
-            if state == "funcarr":
-                state = "funcarr"
-            else:
-                return 0
-        elif s.cls == "identifier4":
-            if state == "funcarr":
-                state = "funcarr"
-            else:
-                return 0
-        # elif s.cls == "letter" or s.cls == "digit":
-        #     if state == "funcarrparam":
-        #         state = "funcarrparam"
-        #     else:
-        #         return 0
-        elif s.cls == "brkt2":
-            if state == "semicolon":
-                state = "semicolon"
-            else:
-                return 0
-    if state == "semicolon":
-        return 1
-    return 0
+fsm = {"start": {"key_repeat": "keyword_repeat"},
+       "keyword_repeat": {"ident": "func"},
+       "func": {"brkt1": "funcparam"},
+       "funcparam": {"int": "endparam"},
+       "endparam": {"brkt2": "keyword_untill"},
+       "keyword_untill": {"key_until": "arr"},
+       "arr": {"ident": "arr_start_param"},
+       "arr_start_param": {"sqrbrkt1": "arr_first_summand"},
+       "arr_first_summand": {"ident": "arr_sign"},
+       "arr_sign": {"arithmet_sign": "arr_second_summand"},
+       "arr_second_summand": {"ident": "arr_param_end"},
+       "arr_param_end": {"sqrbrkt2": "ar_sign"},
+       "ar_sign": {"arithmet_sign": "arr2"},
+       "arr2": {"ident": "arr_start_param2"},
+       "arr_start_param2": {"sqrbrkt1": "arr_first_summand2"},
+       "arr_first_summand2": {"ident": "arr_sign2"},
+       "arr_sign2": {"arithmet_sign": "arr_second_summand2"},
+       "arr_second_summand2": {"ident": "arr_param_end2"},
+       "arr_param_end2": {"sqrbrkt2": "comp_sign"},
+       "comp_sign": {"compar_sign": "identifier"},
+       "identifier": {"ident": "semicolon"},
+       "semicolon": {"smcolon": "accept"}}
+
+initial_state = "start"
+
+admitting_states = ["accept"]
+
+
+def syntax(words: List[namedtuple], initial_state: str = initial_state) -> bool:
+    state = initial_state
+    for word in words:
+        transitions = fsm.get(state)
+        if word.cls in transitions.keys():
+            state = transitions.get(word.cls)
+        else:
+            return False
+    if state in admitting_states:
+        return True

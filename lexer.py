@@ -1,230 +1,181 @@
 from typing import List
 from collections import namedtuple
-from input_output import FileManager
 from keywords import PASCAL_KEYWORDS
 
 
-class Lexer:
-    LEXER_LEXEM: namedtuple = namedtuple('Lexem', ['symbol', 'cls'])
+fsm = {"start": {"letter": "key-word_repeat", "space": "start"},
+       "key-word_repeat": {"letter": "key-word_repeat", "space": "space1"},
+       "space1": {"letter": "func", "space": "space1"},
+       "func": {"letter": "func", "digit": "func", "brkt1": "funcparam_sing"},
+       "funcparam_sing": {"digit": "funcparam", "dig_sign": "funcparam_firstdigit"},
+       "funcparam_firstdigit": {"digit": "funcparam"},
+       "funcparam": {"digit": "funcparam", "brkt2": "first_space2"},
+       "first_space2": {"space": "space2"},
+       "space2": {"letter": "keyword_untill", "space": "space2"},
+       "keyword_untill": {"letter": "keyword_untill", "space": "space3"},
+       "space3": {"letter": "arr1", "space": "space3"},
+       "arr1": {"letter": "arr1", "digit": "arr1", "sqrbrkt1": "first_summand_ident1"},
+       "first_summand_ident1": {"letter": "first_summand1", "space": "first_summand_ident1"},
+       "first_summand1": {"letter": "first_summand1", "digit": "first_summand1",
+                          "space": "index_space1", "arithmet_sign": "index_space2", "dig_sign": "index_space2"},
+       "index_space1": {"space": "index_space1", "arithmet_sign": "index_space2", "dig_sign": "index_space2"},
+       "index_space2": {"space": "index_space2", "letter": "second_summand1"},
+       "second_summand1": {"letter": "second_summand1", "digit": "second_summand1", "sqrbrkt2": "space4"},
+       "space4": {"space": "space4", "arithmet_sign": "space5", "dig_sign": "space5"},
+       "space5": {"letter": "arr2", "space": "space5"},
+       "arr2": {"letter": "arr2", "digit": "arr2", "sqrbrkt1": "first_summand_ident2"},
+       "first_summand_ident2": {"space": "first_summand_ident2", "letter": "first_summand2"},
+       "first_summand2": {"letter": "first_summand2", "digit": "first_summand2",
+                          "space": "index_space3", "arithmet_sign": "index_space4", "dig_sign": "index_space4"},
+       "index_space3": {"space": "idex_space3", "arithmet_sign": "index_space4", "dig_sign": "index_space4"},
+       "index_space4": {"space": "index_space4", "letter": "second_summand2"},
+       "second_summand2": {"letter": "second_summand2", "digit": "second_summand2", "sqrbrkt2": "space6"},
+       "space6": {"space": "space6", "compar_sign": "space7"},
+       "space7": {"space": "space7", "letter": "ident"},
+       "ident": {"letter": "ident", "digit": "ident", "space": "space8", "smcolon": "space9"},
+       "space8": {"space": "space8", "smcolon": "space9"},
+       "space9": {"space": "space9"}}
 
-    @classmethod
-    def lexical(cls, symbols:List[namedtuple]) -> List[namedtuple]:
-        pass
+initial_state = "start"
 
-    @classmethod
-    def process_chain_to_lexems(cls, chain_of_lexems: List[namedtuple]) -> List[namedtuple]:
-        lexer_chain = []
-        now = [' ', 'None']
-        state = "start"
+admitting_states = ["space9"]
 
-        for s in chain_of_lexems:
-            if s.cls == "letter":  # РІСЃС‚СЂРµС‡Р°РµРј Р‘СѓРєРІС‹
-                if state == "start":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "identifier"
-                    state = "name"
-                elif state == "name":
-                    now[0] += s.symbol
-                elif state == "equ":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "identifier2"
-                    state = "array"
-                elif state == "array":
-                    now[0] += s.symbol
-                elif state == "arrayparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "letter"
-                    state = "arrayparam"
-                elif state == "space2":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "identifier3"
-                    state = "func"
-                elif state == "func":
-                    now[0] += s.symbol
-                elif state == "funcarr":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "identifier4"
-                    state = "funcparam"
-                elif state == "funcparam":
-                    now[0] += s.symbol
-                elif state == "funcarrparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "letter"
-                    state = "funcarrparam"
-                else:
-                    FileManager.return_output(chain_detected=False)
+searching_ident_states = ["space1", "space3", "space8"]
 
-            elif s.cls == "col":  # РІСЃС‚СЂРµС‡Р°РµРј :
-                if state == "name":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "col"
-                    state = "tdots"
-                else:
-                    FileManager.return_output(chain_detected=False)
+searching_symbol_states = ["space7"]
 
-            elif s.cls == "equal sign":  # РІСЃС‚СЂРµС‡Р°РµРј =
-                if state == "tdots":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "equal sign"
-                    state = "equ"
-                else:
-                    # print('equal sign')
-                    FileManager.return_output(chain_detected=False)
+searching_int_states = ["first_space2"]
 
-            elif s.cls == "space":  # РІСЃС‚СЂРµС‡Р°РµРј РџСЂРѕР±РµР»
-                if state == "arrayparam":
-                    state = "space1"
-                elif state == "space1":
-                    state = "space1"
-                elif state == "sign":
-                    state = "space2"
-                elif state == "semicolon":
-                    pass
-                else:
-                    # print(now)
-                    # print(words)
-                    # print(state)
-                    # print("space")
-                    FileManager.return_output(chain_detected=False)
+searching_ident_and_sym_states = ["funcparam_sing", "first_summand_ident1", "space4", "first_summand_ident2", "space6", "space9"]
 
-            elif s.cls == "digit":  # РІСЃС‚СЂРµС‡Р°РµРј Р§РёСЃР»Рѕ
-                if state == "name":
-                    now[0] += s.symbol
-                elif state == "array":
-                    now[0] += s.symbol
-                elif state == "arrayparam":
-                    now[0] += s.symbol
-                elif state == "arrayparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "digit"
-                    state = "arrayparam"
-                elif state == "func":
-                    now[0] += s.symbol
-                elif state == "funcarr":
-                    now[0] += s.symbol
-                elif state == "funcarrparam":
-                    now[0] += s.symbol
-                elif state == "funcarrparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "digit"
-                    state = "funcarrparam"
-                elif state == "funcparam":
-                    now[0] += s.symbol
-                else:
-                    # print("Digit")
-                    FileManager.return_output(chain_detected=False)
+searching_ident_and_ar_sing_states = ["index_space2", "index_space4"]
 
-            elif s.cls == "arithmetic sign":  # РІСЃС‚СЂРµС‡Р°РµРј РђСЂРёС„РјРµС‚РёС‡РµСЃРєРёР№ Р·РЅР°Рє
-                if state == "space1":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "arithmetic sign"
-                    state = "sign"
-                elif state == "arrayparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "digit"
-                    state = "arrayparam"
-                elif state == "funcarrparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "digit"
-                    state = "funcarrparam"
-                else:
-                    # print(now)
-                    # print(state)
-                    # print("ArithSign")
-                    # print(words)
-                    FileManager.return_output(chain_detected=False)
-
-            elif s.cls == "semicolon":  # РІСЃС‚СЂРµС‡Р°РµРј ;
-                if state == "semicolon":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "semicolon"
-                    state = "semicolon"
-                else:
-                    # print("semicol")
-                    FileManager.return_output(chain_detected=False)
-
-            elif s.cls == "sqrbrkt1":  # РІСЃС‚СЂРµС‡Р°РµРј [
-                if state == "array":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "sqrbrkt1"
-                    state = "arrayparam"
-                elif state == "func":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "sqrbrkt1"
-                    state = "funcarr"
-                elif state == "funcparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "sqrbrkt1"
-                    state = "funcarrparam"
-                else:
-                    # print("[")
-                    # print(now)
-                    # print(words)
-                    # print(state)
-                    FileManager.return_output(chain_detected=False)
-
-            elif s.cls == "sqrbrkt2":  # РІСЃС‚СЂРµС‡Р°РµРј ]
-                if state == "arrayparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "sqrbrkt2"
-                    state = "space1"
-                elif state == "funcarrparam":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "sqrbrkt2"
-                    state = "semicolon"
-                else:
-                    FileManager.return_output(chain_detected=False)
-
-            elif s.cls == "brkt1":
-                if state == "func":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "brkt1"
-                    state = "funcarr"
-                else:
-                    FileManager.return_output(chain_detected=False)
-
-            elif s.cls == "brkt2":
-                if state == "semicolon":
-                    lexer_chain.append(cls.LEXER_LEXEM(*now))
-                    now[0] = s.symbol
-                    now[1] = "brkt2"
-                    state = "semicolon"
-                else:
-                    FileManager.return_output(chain_detected=False)
+LEXER_LEXEM: namedtuple = namedtuple('Lexem', ['word', 'cls'])
 
 
-        lexer_chain.append(cls.LEXER_LEXEM(*now))
-        lexer_chain.pop(0)
+def garanted_lexical(symbols: List[namedtuple]) -> List[namedtuple]:
+    words = []
+    state = initial_state
+    word = ""
+    for symbol in symbols:
+        transition = fsm.get(state)
+        if symbol.cls in transition.keys():
+            if symbol.cls != "space":
+                word += symbol.symbol
+            if transition.get(symbol.cls) == "space1" and word != "":
+                words.append(LEXER_LEXEM(word, "ident"))
+                word = ""
+            elif transition.get(symbol.cls) == "funcparam_sing" and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                print(symbol.symbol)
+                word = ""
+            elif transition.get(symbol.cls) == "first_space2":
+                words.append(LEXER_LEXEM(word[:-1], "int"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif transition.get(symbol.cls) == "space3" and word != "":
+                words.append(LEXER_LEXEM(word, "ident"))
+                word = ""
+            elif transition.get(symbol.cls) == "first_summand_ident1" and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif transition.get(symbol.cls) == "index_space2" and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, "arithmet_sign"))
+                word = ""
+            elif transition.get(symbol.cls) == "space4":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif transition.get(symbol.cls) == "space5" and word != "":
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif transition.get(symbol.cls) == "first_summand_ident2" and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif transition.get(symbol.cls) == "index_space4" and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, "arithmet_sign"))
+                word = ""
+            elif transition.get(symbol.cls) == "space6":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif transition.get(symbol.cls) == "space7" and word != "":
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif transition.get(symbol.cls) == "space8" and word != "":
+                words.append(LEXER_LEXEM(word, "ident"))
+                word = ""
+            elif transition.get(symbol.cls) == "space9" and len(word) != 0:
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            state = transition.get(symbol.cls)
 
-        # Блок идентификации ключевых слов
-        cls._check_keywords(chain_of_lexems=lexer_chain)
+        else:
+            print("пизда", symbol.symbol)
+            break
+    return words
 
-        return lexer_chain
 
-    @classmethod
-    def _check_keywords(self, chain_of_lexems: List[namedtuple]) -> None:
-        for lexem in chain_of_lexems:
-            if lexem.cls == "identifier":
-                # index = binary_search(chain_of_lexems[i].symbol.lower(), 0, len(keywords_list))
-                if lexem.symbol.lower() in PASCAL_KEYWORDS:
-                    FileManager.return_output(chain_detected=False)
+def lexical(symbols: List[namedtuple], initial_state: str = initial_state) -> List[namedtuple]:
+    words = []
+    state = initial_state
+    word = ""
+    for symbol in symbols:
+        transition = fsm.get(state)
+
+        if symbol.cls in transition.keys():
+            next_state = transition.get(symbol.cls)
+            if symbol.cls != "space":
+                word += symbol.symbol
+            if next_state in searching_ident_states and word != "":
+                words.append(LEXER_LEXEM(word, "ident"))
+                word = ""
+            elif next_state in searching_symbol_states and word != "":
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state == "space9" and len(word) == 1:
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state in searching_ident_and_sym_states and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state in searching_ident_and_ar_sing_states and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "ident"))
+                words.append(LEXER_LEXEM(symbol.symbol, "arithmet_sign"))
+                word = ""
+            elif next_state in searching_int_states and word != "":
+                words.append(LEXER_LEXEM(word[:-1], "int"))
+                words.append(LEXER_LEXEM(symbol.symbol, symbol.cls))
+                word = ""
+            elif next_state == "space5" and word != "":
+                words.append(LEXER_LEXEM(symbol.symbol, "arithmet_sign"))
+                word = ""
+            state = next_state
+        else:
+            return []
+    return words
+
+
+def check_keywords(words: List[namedtuple]) -> List[namedtuple]:
+    for index, word in enumerate(words):
+        if word.cls == "ident":
+            if word.word in PASCAL_KEYWORDS:
+                words[index] = LEXER_LEXEM(word.word, change_cls(word.word))
+    return words
+
+
+def change_cls(word: str) -> str:
+    return f"key_{word}"
+
+
+
+
+
+
+

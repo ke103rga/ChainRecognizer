@@ -1,7 +1,7 @@
-from input_output import data_input, data_output
+from file_manager import data_input, data_output
 from transliterator import transliteration
-from lexer2 import lexical, check_keywords
-from syntax2 import syntax
+from lexer import lexical, check_keywords
+from syntax import syntax
 
 
 def main():
